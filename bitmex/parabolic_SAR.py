@@ -1,14 +1,14 @@
 
-import bitmex_bot3
+import bitmex_bot_parabolic
 import numpy as np
 import talib as ta
 import time
 import datetime
 from scipy import optimize
 
-class para_sar(bitmex_bot3.Bot):
+class para_sar(bitmex_bot_parabolic.Bot):
     def __init__(self):
-        self._iaf = 0.02
+        self._iaf = 0.01
         self._af = 0.2
         super().__init__()
 
@@ -66,7 +66,7 @@ class para_sar(bitmex_bot3.Bot):
         psarbear = [None] * length
         bull = True
 
-        iaf = 0.02
+        iaf = 0.01
         maxaf = 0.2
 
         af = iaf
@@ -176,8 +176,8 @@ class para_sar(bitmex_bot3.Bot):
     def judgeForLoop(self, df_candle_stick):
 
         df_ = df_candle_stick.reset_index()
-        df_ = df_.rename(columns={'t': 'date_date'})
-        #df_ = df_.rename(columns={'index': 'date_date'})
+        #df_ = df_.rename(columns={'t': 'date_date'})
+        df_ = df_.rename(columns={'index': 'date_date'})
 
         #パラボリックSARの計算
         result = self.psar(df_)
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     para_sar_bot = para_sar()
     para_sar_bot.candleTerm = "5T"
     para_sar_bot._lot = 100
-    para_sar_bot._iaf = 0.02
+    para_sar_bot._iaf = 0.01
     para_sar_bot._af = 0.05
 
     #バックテスト用
