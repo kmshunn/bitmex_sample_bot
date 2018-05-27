@@ -99,5 +99,6 @@ if __name__ == "__main__":
     print("Waiting...")
     time.sleep(time_diff)
     print("start time:" + now.strftime("%Y-%m-%d %H:%M:%S"))
+    time.sleep(30)
 
     rsi_bot.loop()
