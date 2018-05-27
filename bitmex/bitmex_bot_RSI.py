@@ -171,7 +171,7 @@ class Bot:
         print(lot)
 
 
-        while True:
+        try:
             try:
                 tick = self.api.fetch_ticker(self._product_code)
             except:
@@ -355,6 +355,8 @@ class Bot:
                 print(message)
                 self.lineNotify(message)
                 print(pos)
+        except:
+            print("Unknown error happend")
 
     def lineNotify(self, message):
         line_notify_token = 'fVXGnTYKe6uORVNOJJzwbpqzUwTpPr01YZWkq3H1X7o'
