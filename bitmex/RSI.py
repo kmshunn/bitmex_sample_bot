@@ -98,13 +98,8 @@ if __name__ == "__main__":
     #本番用（実行時にはコメントアウトを解除すること）
     #開始時間まで待つ
     now = datetime.datetime.now()
-    print(now.strftime("%Y-%m-%d %H:%M:%S"))
-    start_time = now + datetime.timedelta(minutes=1)
-    start_time = start_time.replace(second=15, microsecond=0)
-    time_diff = int((start_time - now).total_seconds())
     print("Waiting...")
-    time.sleep(time_diff)
     print("start time:" + now.strftime("%Y-%m-%d %H:%M:%S"))
-    time.sleep(30)
+    
 
     rsi_bot.loop()

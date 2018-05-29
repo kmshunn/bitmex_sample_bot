@@ -349,8 +349,6 @@ class Bot:
             #         lastPositionPrice = Bid
 
 
-
-            time.sleep(30)
             try:
                 message = self.order.get_pos_info()
             except:
