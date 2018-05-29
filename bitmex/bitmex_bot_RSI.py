@@ -177,8 +177,6 @@ class Bot:
             tick = self.api.fetch_ticker(self._product_code)
         except:
             print("Unknown error happened when you requested ticker.")
-        finally:
-            pass
 
         #指値で注文したい場合に求める
         #best_ask = ticker["best_ask"]
@@ -190,10 +188,12 @@ class Bot:
             df_candlestick = self.getCandlestick(200, "300")
         except:
             print("Unknown error happened when you requested candle stick")
-        finally:
-            pass
 
-        judgement = self.judgeForLoop(df_candlestick)
+        try:
+            judgement = self.judgeForLoop(df_candlestick)
+        except:
+            print("Unknown error happened when you requested judgeForLoop")
+
 
         if pos == 0:
 
@@ -207,22 +207,27 @@ class Bot:
 
             message = ""
 
-            #ロングエントリー
-            if judgement[0] == 1:
-                self.order.market("buy", lot)
-                pos += 1
-                message = "Long entry. size:{}, price:{}".format(lot, Ask)
-                self.lineNotify(message)
+            try:
 
-                lastPositionPrice = Ask
-            #ショートエントリー
-            elif judgement[1] == 1 :
-                self.order.market("sell", lot)
-                pos -= 1
-                message = "Short entry. size:{}, price:{}".format(lot, Bid)
-                self.lineNotify(message)
+                #ロングエントリー
+                if judgement[0] == 1:
+                    self.order.market("buy", lot)
+                    pos += 1
+                    message = "Long entry. size:{}, price:{}".format(lot, Ask)
+                    self.lineNotify(message)
 
-                lastPositionPrice = Bid
+                    lastPositionPrice = Ask
+
+                #ショートエントリー
+                elif judgement[1] == 1 :
+                    self.order.market("sell", lot)
+                    pos -= 1
+                    message = "Short entry. size:{}, price:{}".format(lot, Bid)
+                    self.lineNotify(message)
+
+                    lastPositionPrice = Bid
+            except:
+                print("Unknown error happened when you requested entryorder")
 
         elif pos == 1:
             #ロングクローズ
@@ -359,7 +364,7 @@ class Bot:
             print(message)
             self.lineNotify(message)
             print(pos)
-        
+
 
     def lineNotify(self, message):
         line_notify_token = 'fVXGnTYKe6uORVNOJJzwbpqzUwTpPr01YZWkq3H1X7o'

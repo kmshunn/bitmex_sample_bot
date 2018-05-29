@@ -21,8 +21,9 @@ class rsi(bitmex_bot_RSI.Bot):
         close = df_candlestick["close"]
         RSI_period = self.rsi_period
         diff = close.diff(1)
-        positive = diff.clip_lower(0).ewm(alpha=1/RSI_period).mean()
-        negative = diff.clip_upper(0).ewm(alpha=1/RSI_period).mean()
+        df_diff = pd.DataFrame(diff)
+        positive = df_diff.clip_lower(0).ewm(alpha=1/RSI_period).mean()
+        negative = df_diff.clip_upper(0).ewm(alpha=1/RSI_period).mean()
         RSI = 100-100/(1-positive/negative)
         RSI = pd.DataFrame(RSI).rename(columns = {"close":"RSI"})
         return RSI
@@ -100,6 +101,6 @@ if __name__ == "__main__":
     now = datetime.datetime.now()
     print("Waiting...")
     print("start time:" + now.strftime("%Y-%m-%d %H:%M:%S"))
-    
+
 
     rsi_bot.loop()
