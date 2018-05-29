@@ -172,195 +172,194 @@ class Bot:
         print(lot)
 
 
+
         try:
+            tick = self.api.fetch_ticker(self._product_code)
+        except:
+            print("Unknown error happened when you requested ticker.")
+        finally:
+            pass
+
+        #指値で注文したい場合に求める
+        #best_ask = ticker["best_ask"]
+        #best_bid = ticker["best_bid"]
+        Bid = tick["bid"]
+        Ask = tick["ask"]
+
+        try:
+            df_candlestick = self.getCandlestick(200, "300")
+        except:
+            print("Unknown error happened when you requested candle stick")
+        finally:
+            pass
+
+        judgement = self.judgeForLoop(df_candlestick)
+
+        if pos == 0:
+
+            # if candleterm == None:
+            #     df_candlestick = self.fromListToDF(candlestick)
+            # else:
+            #     df_candlestick = self.processCandleStick(candlestick, cendleterm=None)
+
+            #前回取引してから５分以上経過していない場合は、ポジションを変更しない
+            next_order_span = 5
+
+            message = ""
+
+            #ロングエントリー
+            if judgement[0] == 1:
+                self.order.market("buy", lot)
+                pos += 1
+                message = "Long entry. size:{}, price:{}".format(lot, Ask)
+                self.lineNotify(message)
+
+                lastPositionPrice = Ask
+            #ショートエントリー
+            elif judgement[1] == 1 :
+                self.order.market("sell", lot)
+                pos -= 1
+                message = "Short entry. size:{}, price:{}".format(lot, Bid)
+                self.lineNotify(message)
+
+                lastPositionPrice = Bid
+
+        elif pos == 1:
+            #ロングクローズ
+            #現在のポジションをチェックし、存在しない場合はpositionを０にする
             try:
-                tick = self.api.fetch_ticker(self._product_code)
+                position_list = self.api.private_get_position()[1]
+
+                if position_list['currentQty'] == 0:
+                    message = "Long position closed manually, currently no position."
+                    self.lineNotify(message)
+                    pos -= 1
+
             except:
-                print("Unknown error happened when you requested ticker.")
-            finally:
+                #exception発生時はpass(ネットワークエラー発生のため)
                 pass
 
-            #指値で注文したい場合に求める
-            #best_ask = ticker["best_ask"]
-            #best_bid = ticker["best_bid"]
-            Bid = tick["bid"]
-            Ask = tick["ask"]
+            #ロスカット
+            if position_list["avgCostPrice"] - Bid > 100:
+                position = position_list['currentQty']
+                lastPositionPrice = position_list['avgCostPrice']
+                loscut = self.order.market("sell", position)
+                plRange = loscut["price"] - lastPositionPrice
+                pl.append(plRange)
+                message = "Long losscut close. size:{}, price:{}, pl:{}".format(position, Bid, pl[-1])
+                print(message)
+                self.lineNotify(message)
+                message = "operetion closed 15 minutes"
+                print(message)
+                self.lineNotify(message)
+                time.sleep(60*15)
+                sys.exit()
 
-            try:
-                df_candlestick = self.getCandlestick(200, "300")
-            except:
-                print("Unknown error happened when you requested candle stick")
-            finally:
-                pass
 
-            judgement = self.judgeForLoop(df_candlestick)
 
-            if pos == 0:
-
-                # if candleterm == None:
-                #     df_candlestick = self.fromListToDF(candlestick)
-                # else:
-                #     df_candlestick = self.processCandleStick(candlestick, cendleterm=None)
-
-                #前回取引してから５分以上経過していない場合は、ポジションを変更しない
-                next_order_span = 5
-
-                message = ""
-
-                #ロングエントリー
-                if judgement[0] == 1:
+            if (judgement[0] == 1) & (podition_list["currentQty"] == 1*lot):
                     self.order.market("buy", lot)
-                    pos += 1
                     message = "Long entry. size:{}, price:{}".format(lot, Ask)
                     self.lineNotify(message)
 
-                    lastPositionPrice = Ask
-                #ショートエントリー
-                elif judgement[1] == 1 :
-                    self.order.market("sell", lot)
-                    pos -= 1
-                    message = "Short entry. size:{}, price:{}".format(lot, Bid)
-                    self.lineNotify(message)
+            if  juegement[3] == 1 :
+                #クローズ前に直近の損益情報を保存し、csv出力
+                #try:
+                   #self.order.calc_profitloss()
+                #except:
+                    #pass
+                lastPositionPrice = position_list['avgCostPrice']
+                order = self.order.market("sell", lot)
+                plRange = order["price"] - lastPositionPrice
+                pl.append(plRange)
 
-                    lastPositionPrice = Bid
-
-            elif pos == 1:
-                #ロングクローズ
-                #現在のポジションをチェックし、存在しない場合はpositionを０にする
-                try:
-                    position_list = self.api.private_get_position()[1]
-
-                    if position_list['currentQty'] == 0:
-                        message = "Long position closed manually, currently no position."
-                        self.lineNotify(message)
-                        pos -= 1
-
-                except:
-                    #exception発生時はpass(ネットワークエラー発生のため)
-                    pass
-
-                #ロスカット
-                if position_list["avgCostPrice"] - Bid > 100:
-                    position = position_list['currentQty']
-                    lastPositionPrice = position_list['avgCostPrice']
-                    loscut = self.order.market("sell", position)
-                    plRange = loscut["price"] - lastPositionPrice
-                    pl.append(plRange)
-                    message = "Long losscut close. size:{}, price:{}, pl:{}".format(position, Bid, pl[-1])
-                    print(message)
-                    self.lineNotify(message)
-                    message = "operetion closed 15 minutes"
-                    print(message)
-                    self.lineNotify(message)
-                    time.sleep(60*15)
-                    sys.exit()
-
-
-
-                if (judgement[0] == 1) & (podition_list["currentQty"] == 1*lot):
-                        self.order.market("buy", lot)
-                        message = "Long entry. size:{}, price:{}".format(lot, Ask)
-                        self.lineNotify(message)
-
-                if  juegement[3] == 1 :
-                    #クローズ前に直近の損益情報を保存し、csv出力
-                    #try:
-                       #self.order.calc_profitloss()
-                    #except:
-                        #pass
-                    lastPositionPrice = position_list['avgCostPrice']
-                    order = self.order.market("sell", lot)
-                    plRange = order["price"] - lastPositionPrice
-                    pl.append(plRange)
-
-                    message = "Long close. size:{}, price:{}, pl:{}".format(position, Bid, pl[-1])
-                    print(message)
-                    self.lineNotify(message)
-                else:
-                    pass
-
-            elif pos == -1:
-                #ショートクローズ
-                #現在のpositionをチェックし、存在しない場合はpositionをゼロにする
-                try:
-                    position_list = self.api.private_get_position()[1]
-
-                    if position_list['currentQty'] == 0:
-                        message = "short position closed manually, currently no position"
-                        self.lineNotify(message)
-                        pos += 1
-                except:
-                    #exception発生時はpass(ネットワークエラー発生のため)
-                    pass
-
-                if Ask - position_list["avgCostPrice"]  > 100:
-                    position = position_list['currentQty']
-                    lastPositionPrice = position_list['avgCostPrice']
-                    loscut = self.order.market("buy", -position)
-                    plRange = lastPositionPrice - loscut["price"]
-                    pl.append(plRange)
-                    message = "Short losscut close. Lot:{}, Price:{}, pl:{}".format(-position, Ask, pl[-1])
-                    print(message)
-                    self.lineNotify(message)
-                    message = "operetion closed 15 minutes"
-                    self.lineNotify(message)
-                    print(message)
-                    time.sleep(60*15)
-                    sys.exit()
-
-                if (judgement[1] == 1) & (position_list["currentQty"] == -1*lot):
-                    self.order.market("sell", lot)
-                    message = "Short entry. size:{}, price:{}".format(lot, Bid)
-                    self.lineNotify(message)
-
-                if judgement[2] == 0:
-                    #クローズ前に直近の損益情報を保存し、csv出力
-                    #try:
-                       #self.order.calc_profitloss()
-                    #except:
-                        #pass
-                    lastPositionPrice = position_list['avgCostPrice']
-                    order = self.order.market("buy", lot)
-                    plRange = lastPositionPrice - order["price"]
-                    pl.append(plRange)
-                    message = "Short close. Lot:{}, Price:{}, pl:{}".format(-position, Ask, pl[-1])
-                    print(message)
-                    self.lineNotify(message)
-
-            # #さらに，クローズと同時にエントリーシグナルが出ていたときの処理．
-            # if pos == 0:
-            #     #ロングエントリー
-            #     if judgement[0] == 1:
-            #         print(datetime.datetime.now())
-            #         self.next_order_min = datetime.datetime.now() + datetime.timedelta(minutes=next_order_span)
-            #         self.order.market("buy", lot )
-            #         pos += 1
-            #         message = "Long entry. Lot:{}, Price:{}".format(lot, Ask)
-            #         self.lineNotify(message)
-            #         lastPositionPrice = Ask
-            #     #ショートエントリー
-            #     elif judgement[1] == 1 :
-            #         print(datetime.datetime.now())
-            #         self.next_order_min = datetime.datetime.now() + datetime.timedelta(minutes=next_order_span)
-            #         self.order.market("sell", lot)
-            #         pos -= 1
-            #         message = "Short entry. Lot:{}, Price:{}".format(lot, Bid)
-            #         self.lineNotify(message)
-            #         lastPositionPrice = Bid
-
-
-            try:
-                message = self.order.get_pos_info()
-            except:
-                message = "Waiting."
-                pass
-
-            if datetime.datetime.now().minute % 5 == 0 and datetime.datetime.now().second < 30:
+                message = "Long close. size:{}, price:{}, pl:{}".format(position, Bid, pl[-1])
                 print(message)
                 self.lineNotify(message)
-                print(pos)
+            else:
+                pass
+
+        elif pos == -1:
+            #ショートクローズ
+            #現在のpositionをチェックし、存在しない場合はpositionをゼロにする
+            try:
+                position_list = self.api.private_get_position()[1]
+
+                if position_list['currentQty'] == 0:
+                    message = "short position closed manually, currently no position"
+                    self.lineNotify(message)
+                    pos += 1
+            except:
+                #exception発生時はpass(ネットワークエラー発生のため)
+                pass
+
+            if Ask - position_list["avgCostPrice"]  > 100:
+                position = position_list['currentQty']
+                lastPositionPrice = position_list['avgCostPrice']
+                loscut = self.order.market("buy", -position)
+                plRange = lastPositionPrice - loscut["price"]
+                pl.append(plRange)
+                message = "Short losscut close. Lot:{}, Price:{}, pl:{}".format(-position, Ask, pl[-1])
+                print(message)
+                self.lineNotify(message)
+                message = "operetion closed 15 minutes"
+                self.lineNotify(message)
+                print(message)
+                time.sleep(60*15)
+                sys.exit()
+
+            if (judgement[1] == 1) & (position_list["currentQty"] == -1*lot):
+                self.order.market("sell", lot)
+                message = "Short entry. size:{}, price:{}".format(lot, Bid)
+                self.lineNotify(message)
+
+            if judgement[2] == 0:
+                #クローズ前に直近の損益情報を保存し、csv出力
+                #try:
+                   #self.order.calc_profitloss()
+                #except:
+                    #pass
+                lastPositionPrice = position_list['avgCostPrice']
+                order = self.order.market("buy", lot)
+                plRange = lastPositionPrice - order["price"]
+                pl.append(plRange)
+                message = "Short close. Lot:{}, Price:{}, pl:{}".format(-position, Ask, pl[-1])
+                print(message)
+                self.lineNotify(message)
+
+        # #さらに，クローズと同時にエントリーシグナルが出ていたときの処理．
+        # if pos == 0:
+        #     #ロングエントリー
+        #     if judgement[0] == 1:
+        #         print(datetime.datetime.now())
+        #         self.next_order_min = datetime.datetime.now() + datetime.timedelta(minutes=next_order_span)
+        #         self.order.market("buy", lot )
+        #         pos += 1
+        #         message = "Long entry. Lot:{}, Price:{}".format(lot, Ask)
+        #         self.lineNotify(message)
+        #         lastPositionPrice = Ask
+        #     #ショートエントリー
+        #     elif judgement[1] == 1 :
+        #         print(datetime.datetime.now())
+        #         self.next_order_min = datetime.datetime.now() + datetime.timedelta(minutes=next_order_span)
+        #         self.order.market("sell", lot)
+        #         pos -= 1
+        #         message = "Short entry. Lot:{}, Price:{}".format(lot, Bid)
+        #         self.lineNotify(message)
+        #         lastPositionPrice = Bid
+
+
+        try:
+            message = self.order.get_pos_info()
         except:
-            print("Unknown error happend")
+            message = "Waiting."
+            pass
+
+        if datetime.datetime.now().minute % 5 == 0 and datetime.datetime.now().second < 30:
+            print(message)
+            self.lineNotify(message)
+            print(pos)
+        
 
     def lineNotify(self, message):
         line_notify_token = 'fVXGnTYKe6uORVNOJJzwbpqzUwTpPr01YZWkq3H1X7o'
