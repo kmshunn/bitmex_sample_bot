@@ -208,8 +208,6 @@ class Bot:
 
                 #ロングエントリー
                 if judgement[0] == 1:
-                    order_time = datetime.datetime.now()
-                    print(order_time)
                     self.order.market("buy", lot)
                     pos += 1
                     message = "Long entry. size:{}, price:{}".format(lot, Ask)
@@ -218,8 +216,6 @@ class Bot:
                     lastPositionPrice = Ask
                 #ショートエントリー
                 elif judgement[1] == 1 :
-                    order_time = datetime.datetime.now()
-                    print(order_time)
                     self.order.market("sell", lot)
                     pos -= 1
                     message = "Short entry. size:{}, price:{}".format(lot, Bid)
@@ -242,32 +238,38 @@ class Bot:
                     #exception発生時はpass(ネットワークエラー発生のため)
                     pass
 
-                now = datetime.datetime.now()
-                #orderからの経過時間
-                time_span = now - order_time
+                #ロスカット
+                if position_list["avgCostPrice"] - Bid > 100:
+                    position = position_list['currentQty']
+                    lastPositionPrice = position_list['avgCostPrice']
+                    loscut = self.order.market("sell", position)
+                    plRange = loscut["price"] - lastPositionPrice
+                    pl.append(plRange)
+                    message = "Long losscut close. size:{}, price:{}, pl:{}".format(position, Bid, pl[-1])
+                    print(message)
+                    self.lineNotify(message)
+                    message = "operetion closed 15 minutes"
+                    print(message)
+                    self.lineNotify(message)
+                    time.sleep(60*15)
+                    continue
 
-                if time_span.seconds > 60*5:
-                    if judgement[0] == 1:
-                        order_time = datetime.datetime.now()
-                        print(order_time)
+
+
+                if (judgement[0] == 1) & (podition_list["currentQty"] == 1*lot):
                         self.order.market("buy", lot)
                         message = "Long entry. size:{}, price:{}".format(lot, Ask)
                         self.lineNotify(message)
 
-                now = datetime.datetime.now()
-                time_span = now - order_time
-
-                if  time_span.seconds > 15*60 :
+                if  juegement[3] == 1 :
                     #クローズ前に直近の損益情報を保存し、csv出力
                     #try:
                        #self.order.calc_profitloss()
                     #except:
                         #pass
-                    position_list = self.api.private_get_position()[1]
-                    position = position_list['currentQty']
-                    self.order.market("sell", position)
-                    pos -= 1
-                    plRange = Bid - lastPositionPrice
+                    lastPositionPrice = position_list['avgCostPrice']
+                    order = self.order.market("sell", lot)
+                    plRange = order["price"] - lastPositionPrice
                     pl.append(plRange)
 
                     message = "Long close. size:{}, price:{}, pl:{}".format(position, Bid, pl[-1])
@@ -290,32 +292,35 @@ class Bot:
                     #exception発生時はpass(ネットワークエラー発生のため)
                     pass
 
-                now = datetime.datetime.now()
-                #orderからの経過時間
-                time_span = now - order_time
+                if Ask - position_list["avgCostPrice"]  > 100:
+                    position = position_list['currentQty']
+                    lastPositionPrice = position_list['avgCostPrice']
+                    loscut = self.order.market("buy", -position)
+                    plRange = lastPositionPrice - loscut["price"]
+                    pl.append(plRange)
+                    message = "Short losscut close. Lot:{}, Price:{}, pl:{}".format(-position, Ask, pl[-1])
+                    print(message)
+                    self.lineNotify(message)
+                    message = "operetion closed 15 minutes"
+                    self.lineNotify(message)
+                    print(message)
+                    time.sleep(60*15)
+                    continue
 
-                if time_span.seconds > 60*5:
-                    if judgement[1] == 1:
-                        order_time = datetime.datetime.now()
-                        print(order_time)
-                        self.order.market("sell", lot)
-                        message = "Short entry. size:{}, price:{}".format(lot, Bid)
-                        self.lineNotify(message)
+                if (judgement[1] == 1) & (position_list["currentQty"] == -1*lot):
+                    self.order.market("sell", lot)
+                    message = "Short entry. size:{}, price:{}".format(lot, Bid)
+                    self.lineNotify(message)
 
-                now = datetime.datetime.now()
-                time_span = now - order_time
-
-                if time_span.seconds > 15*60:
+                if judgement[2] == 0:
                     #クローズ前に直近の損益情報を保存し、csv出力
                     #try:
                        #self.order.calc_profitloss()
                     #except:
                         #pass
-                    position_list = self.api.private_get_position()[1]
-                    position = position_list['currentQty']
-                    self.order.market("buy", -position)
-                    pos += 1
-                    plRange = lastPositionPrice - Ask
+                    lastPositionPrice = position_list['avgCostPrice']
+                    order = self.order.market("buy", lot)
+                    plRange = lastPositionPrice - order["price"]
                     pl.append(plRange)
                     message = "Short close. Lot:{}, Price:{}, pl:{}".format(-position, Ask, pl[-1])
                     print(message)
@@ -343,6 +348,8 @@ class Bot:
             #         lastPositionPrice = Bid
 
 
+
+            time.sleep(30)
             try:
                 message = self.order.get_pos_info()
             except:

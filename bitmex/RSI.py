@@ -55,23 +55,29 @@ class rsi(bitmex_bot_RSI.Bot):
 
         judgement = [0,0,0,0]
 
-        long_flag = new_candle.iloc[-1]["rsi_diff"] < -self.rsi
-        short_flag = new_candle.iloc[-1]["rsi_diff"] > self.rsi
+        long_flag = new_candle.iloc[-2]["rsi_diff"] < -self.rsi
+        short_flag = new_candle.iloc[-2]["rsi_diff"] > self.rsi
+        long_c_flag = new_candle.iloc[-5]["rsi_diff"] > -self.rsi
+        short_c_flag = new_candle.iloc[-5]["rsi_diff"] < self.rsi
 
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(now, new_candle.iloc[-1]["date"], new_candle.iloc[-7]["date"])
+        print(now, new_candle.iloc[-2]["date"], new_candle.iloc[-8]["date"])
 
-        print(new_candle.iloc[-1]["RSI"], new_candle.iloc[-7]["RSI"])
+        print(new_candle.iloc[-2]["RSI"], new_candle.iloc[-8]["RSI"])
 
         print("long_flag:" + str(long_flag) + " short_flag:" + str(short_flag))
 
         if (long_flag == True) & (new_candle.iloc[-7]["RSI"] < 70):
             judgement[0] = 1
-            judgement[3] = 1
 
         if (short_flag == True) & (new_candle.iloc[-7]["RSI"] > 30):
             judgement[1] = 1
-            judgement[2] = 1
+
+        if long_c_flag == True:
+            judgement[3] == 1
+
+        if short_c_flag == True:
+            judgement[2] == 1
 
         return judgement
 
