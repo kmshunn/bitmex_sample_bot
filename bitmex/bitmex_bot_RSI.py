@@ -5,6 +5,7 @@ import ccxt
 import requests
 import datetime
 import pandas as pd
+import sys
 
 
 class order():
@@ -252,7 +253,7 @@ class Bot:
                     print(message)
                     self.lineNotify(message)
                     time.sleep(60*15)
-                    continue
+                    sys.exit()
 
 
 
@@ -305,7 +306,7 @@ class Bot:
                     self.lineNotify(message)
                     print(message)
                     time.sleep(60*15)
-                    continue
+                    sys.exit()
 
                 if (judgement[1] == 1) & (position_list["currentQty"] == -1*lot):
                     self.order.market("sell", lot)
