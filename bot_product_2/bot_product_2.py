@@ -144,7 +144,7 @@ class Bot:
         print(lot)
         while True:
             try:
-                df_candle = self.getCandlestick(21, "3600")
+                df_candle = self.getCandlestick(20, "3600")
             except:
                 print("Unknown error happened when you requested candle stick")
             finally:

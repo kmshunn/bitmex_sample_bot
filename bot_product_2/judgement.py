@@ -21,8 +21,8 @@ class openrange(bot_product_2.Bot):
         l = []
         h = []
         c = []
-        for i in range(0,len(df_candle1),2):
-            if i < len(df_candle1)-1:
+        if df_candle1.iloc[-1]["date"].hour % 2 == 0:
+            for i in range(1,len(df_candle1)-1,2):
                 candle1 = df_candle1.iloc[i]
                 candle2 = df_candle1.iloc[i + 1]
                 date.append(candle1["date"])
@@ -31,15 +31,38 @@ class openrange(bot_product_2.Bot):
                 h.append(max(candle1["high"], candle2["high"]))
                 l.append(min(candle1["low"], candle2["low"]))
     
+            date.append(df_candle1.iloc[-1]["date"])
+            o.append(df_candle1.iloc[-1]["open"])
+            c.append(df_candle1.iloc[-1]["close"])
+            h.append(df_candle1.iloc[-1]["high"])
+            l.append(df_candle1.iloc[-1]["low"])
+            new_candle = pd.DataFrame({"date": date,
+                                        "open": o,
+                                        "high": h,
+                                        "low": l,
+                                        "close": c } )
     
-        df_candle2h = pd.DataFrame({"date": date,
-                                    "open": o,
-                                    "high": h,
-                                    "low": l,
-                                    "close": c})
-        df_candle2h = df_candle2h.append(df_candle1.iloc[-1]).reset_index()
-        new_candle = df_candle2h[["date","open","high","low", "close"]]
+    
+        elif df_candle1.iloc[-1]["date"].hour % 2 == 1:
+            for i in range(0,len(df_candle1),2): 
+                print(i)
+                candle1 = df_candle1.iloc[i]
+                candle2 = df_candle1.iloc[i + 1]
+                date.append(candle1["date"])
+                o.append(candle1["open"])
+                c.append(candle2["close"])
+                h.append(max(candle1["high"], candle2["high"]))
+                l.append(min(candle1["low"], candle2["low"]))
+    
+            new_candle = pd.DataFrame({"date": date,
+                                        "open": o,
+                                        "high": h,
+                                        "low": l,
+                                        "close": c})
+    
         return new_candle
+
+
     
     def judgeForLoop(self, candle):
         new_candle = self.candleDF(candle)
@@ -58,7 +81,7 @@ class openrange(bot_product_2.Bot):
         long_flag = current_diff1 > self.number * range_mean
         short_flag = current_diff2 > self.number * range_mean
         
-        print(datetime.datetime.now())
+        print(datetime.datetime.now(), new_candle.iloc[-1]["date"], new_candle.iloc[-2]["date"])
         print(range_mean)
         print("high-open: " + str(current_diff1))
         print("open-low: " + str(current_diff2))
