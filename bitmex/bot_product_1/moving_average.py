@@ -45,7 +45,7 @@ class moving_average(bitmex_bot_ma.Bot):
     
 if __name__ == "__main__":
     MA_bot = moving_average()
-    MA_bot._lot = 0.1
+    MA_bot._lot = 10
     
     MA_bot.MA_period = 5
     

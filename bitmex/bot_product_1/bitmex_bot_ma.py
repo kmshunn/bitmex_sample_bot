@@ -37,14 +37,14 @@ class order():
 
     def market(self, side, size):
         print("Order: Market. side: {} size: {}".format(side, size))
-        response = {"status":"internalError in order.py"}
+        response = {"error":"internalError in order.py"}
         #self.api.create_order(self.product_code, type="market", side=side, amount=size)
         try:
             response = self.api.create_order(self.product_code, type="market", side=side, amount=size)
         except:
             pass
         print(response)
-        while "status" in response:
+        while "error" in response:
             try:
                 response = self.api.create_order(self.product_code, type="market", side=side, amount=size)
             except:
@@ -216,6 +216,7 @@ class Bot:
                     if abs(profit) > total*0.01:
                         order = self.order.market("sell", lot)
                         message = "Long close. size:{}, price:{}".format(lot, order["price"])
+                        pos -= 1
                 except:
                     pass
                         
@@ -243,6 +244,7 @@ class Bot:
                     if abs(profit) > total*0.01:
                         order = self.order.market("buy", lot)
                         message = "Long close. size:{}, price:{}".format(lot, order["price"])
+                        pos += 1
                 except:
                     pass
                 
